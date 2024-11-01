@@ -1,0 +1,194 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+
+public class GUI {
+    private JFrame frame;
+    private JTextField textField;
+    private JButton greetButton;
+    private JButton clearButton;
+    private JButton logoutButton;
+    private JLabel greetingLabel;
+    private JList<String> greetingList;
+    private DefaultListModel<String> listModel;
+    private ArrayList<String> userList;
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton;
+    private JButton registerButton;
+    private JPanel loginPanel;
+    private boolean isLoggedIn;
+    private String currentUsername;
+    private JMenuBar menuBar;
+    private JMenu fileMenu;
+    private JMenu settingsMenu;
+    private JMenuItem exitItem;
+    private JMenuItem changeColorItem;
+    private Color backgroundColor;
+
+    public GUI() {
+        frame = new JFrame("WinMacLin");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+        frame.setLayout(new BorderLayout());
+
+        userList = new ArrayList<>();
+        backgroundColor = Color.WHITE;
+
+        loginPanel = createLoginPanel();
+        frame.add(loginPanel, BorderLayout.NORTH);
+
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new FlowLayout());
+
+        JLabel label = new JLabel("Enter your name:");
+        textField = new JTextField(20);
+        greetButton = new JButton("Greet");
+        clearButton = new JButton("Clear");
+        logoutButton = new JButton("Logout");
+        logoutButton.setEnabled(false);
+
+        inputPanel.add(label);
+        inputPanel.add(textField);
+        inputPanel.add(greetButton);
+        inputPanel.add(clearButton);
+        inputPanel.add(logoutButton);
+
+        greetingLabel = new JLabel("");
+
+        listModel = new DefaultListModel<>();
+        greetingList = new JList<>(listModel);
+        greetingList.setBorder(BorderFactory.createTitledBorder("Previous Greetings"));
+
+        greetButton.addActionListener(e -> { 
+            if (!isLoggedIn) {
+                greetingLabel.setText("Please log in to greet.");
+                return;
+            }
+            String name = textField.getText();
+            if (!name.isEmpty()) {
+                String greeting = "Hello, " + name + "! (Logged in as " + currentUsername + ")";
+                greetingLabel.setText(greeting);
+                listModel.addElement(greeting);
+                textField.setText("");
+            } else {
+                greetingLabel.setText("Please enter your name.");
+            }
+        });
+
+        clearButton.addActionListener(e -> { 
+            textField.setText("");
+            greetingLabel.setText("");
+        });
+
+        logoutButton.addActionListener(e -> { 
+            isLoggedIn = false;
+            greetingLabel.setText("Logged out. Goodbye, " + currentUsername + ". Please log in.");
+            logoutButton.setEnabled(false);
+            textField.setEnabled(false);
+            greetButton.setEnabled(false);
+            clearButton.setEnabled(false);
+        });
+
+        frame.add(inputPanel, BorderLayout.CENTER);
+        frame.add(greetingLabel, BorderLayout.SOUTH);
+        frame.add(new JScrollPane(greetingList), BorderLayout.EAST);
+        
+        menuBar = createMenuBar();
+        frame.setJMenuBar(menuBar);
+        
+        frame.setVisible(true);
+    }
+
+    private JPanel createLoginPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameField = new JTextField(10);
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordField = new JPasswordField(10);
+        loginButton = new JButton("Login");
+        registerButton = new JButton("Register");
+
+        loginButton.addActionListener(e -> {
+            String username = usernameField.getText();
+            String password = new String(passwordField.getPassword());
+            if (authenticateUser(username, password)) {
+                isLoggedIn = true;
+                currentUsername = username;
+                greetingLabel.setText("Welcome, " + username + "!");
+                logoutButton.setEnabled(true);
+                textField.setEnabled(true);
+                greetButton.setEnabled(true);
+                clearButton.setEnabled(true);
+            } else {
+                greetingLabel.setText("Invalid credentials. Please try again.");
+            }
+        });
+
+        registerButton.addActionListener(e -> {
+            String username = usernameField.getText();
+            String password = new String(passwordField.getPassword());
+            if (!username.isEmpty() && !password.isEmpty()) {
+                if (registerUser(username, password)) {
+                    greetingLabel.setText("Registration successful! You can now log in.");
+                } else {
+                    greetingLabel.setText("Username already exists. Choose another.");
+                }
+            } else {
+                greetingLabel.setText("Please enter both username and password.");
+            }
+        });
+
+        panel.add(usernameLabel);
+        panel.add(usernameField);
+        panel.add(passwordLabel);
+        panel.add(passwordField);
+        panel.add(loginButton);
+        panel.add(registerButton);
+
+        return panel;
+    }
+
+    private boolean authenticateUser(String username, String password) {
+        return userList.contains(username + ":" + password);
+    }
+
+    private boolean registerUser(String username, String password) {
+        String userEntry = username + ":" + password;
+        if (!userList.contains(userEntry)) {
+            userList.add(userEntry);
+            return true;
+        }
+        return false;
+    }
+
+    private JMenuBar createMenuBar() {
+        menuBar = new JMenuBar();
+        
+        fileMenu = new JMenu("File");
+        exitItem = new JMenuItem("Exit");
+        exitItem.addActionListener(e -> System.exit(0));
+        fileMenu.add(exitItem);
+        
+        settingsMenu = new JMenu("Settings");
+        changeColorItem = new JMenuItem("Change Background Color");
+        changeColorItem.addActionListener(e -> {
+            backgroundColor = JColorChooser.showDialog(frame, "Choose Background Color", backgroundColor);
+            if (backgroundColor != null) {
+                frame.getContentPane().setBackground(backgroundColor);
+            }
+        });
+        settingsMenu.add(changeColorItem);
+
+        menuBar.add(fileMenu);
+        menuBar.add(settingsMenu);
+
+        return menuBar;
+    }
+
+    public static void main(String[] args) {
+        new GUI(); 
+    }
+}
